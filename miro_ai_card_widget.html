@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Карта недели</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #f9f9f9;
+    --white: #ffffff;
+    --accent: #00C1FF;
+    --accent-dim: rgba(0,193,255,0.10);
+    --accent-border: rgba(0,193,255,0.25);
+    --dark: #1A1A2E;
+    --gray: #8892A4;
+    --light: #E8EDF3;
+    --shadow-dark: rgba(184,197,214,0.5);
+    --shadow-light: rgba(255,255,255,0.95);
+    --text-body: #4A5568;
+    --green: #00C896;
+    --orange: #FF9F43;
+    --red: #FF6B6B;
+    --font: 'StratosSkyeng', 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--dark);
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  /* Neumorphism card */
+  .nm-card {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow:
+      6px 6px 16px var(--shadow-dark),
+      -4px -4px 10px var(--shadow-light);
+    border: 1px solid rgba(255,255,255,0.8);
+  }
+
+  .nm-inset {
+    background: var(--bg);
+    border-radius: 12px;
+    box-shadow:
+      inset 3px 3px 8px var(--shadow-dark),
+      inset -2px -2px 6px var(--shadow-light);
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .header-accent {
+    width: 5px;
+    height: 48px;
+    background: var(--accent);
+    border-radius: 3px;
+  }
+
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--dark);
+    letter-spacing: -0.3px;
+  }
+
+  .header .subtitle {
+    font-size: 12px;
+    color: var(--gray);
+    margin-top: 2px;
+    font-weight: 400;
+  }
+
+  .badge {
+    margin-left: auto;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent-border);
+    color: #0088B3;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* Zone tabs */
+  .zone-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .zone-tab {
+    flex: 1;
+    padding: 10px 8px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 600;
+    transition: all 0.2s;
+    text-align: center;
+    outline: none;
+  }
+
+  .zone-tab.ai {
+    background: var(--white);
+    color: #0088B3;
+    box-shadow: 4px 4px 10px var(--shadow-dark), -2px -2px 6px var(--shadow-light);
+  }
+  .zone-tab.ai.active {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 4px 16px rgba(0,193,255,0.4);
+  }
+
+  .zone-tab.hybrid {
+    background: var(--white);
+    color: #CC7A00;
+    box-shadow: 4px 4px 10px var(--shadow-dark), -2px -2px 6px var(--shadow-light);
+  }
+  .zone-tab.hybrid.active {
+    background: var(--orange);
+    color: white;
+    box-shadow: 0 4px 16px rgba(255,159,67,0.4);
+  }
+
+  .zone-tab.human {
+    background: var(--white);
+    color: #CC4444;
+    box-shadow: 4px 4px 10px var(--shadow-dark), -2px -2px 6px var(--shadow-light);
+  }
+  .zone-tab.human.active {
+    background: var(--red);
+    color: white;
+    box-shadow: 0 4px 16px rgba(255,107,107,0.4);
+  }
+
+  .zone-tab:hover:not(.active) {
+    transform: translateY(-1px);
+  }
+
+  /* Task form */
+  .task-form {
+    display: none;
+  }
+  .task-form.active {
+    display: block;
+  }
+
+  .form-section {
+    margin-bottom: 16px;
+  }
+
+  .form-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .nm-input {
+    width: 100%;
+    background: var(--bg);
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-family: var(--font);
+    font-size: 13px;
+    color: var(--dark);
+    box-shadow:
+      inset 3px 3px 7px var(--shadow-dark),
+      inset -2px -2px 5px var(--shadow-light);
+    outline: none;
+    transition: box-shadow 0.2s;
+    resize: none;
+  }
+
+  .nm-input:focus {
+    box-shadow:
+      inset 3px 3px 7px rgba(0,193,255,0.2),
+      inset -2px -2px 5px var(--shadow-light),
+      0 0 0 2px var(--accent-border);
+  }
+
+  .nm-input::placeholder { color: var(--light); }
+
+  .row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* Time chip selector */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .chip {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    font-family: var(--font);
+    background: var(--white);
+    color: var(--gray);
+    box-shadow: 3px 3px 7px var(--shadow-dark), -2px -2px 5px var(--shadow-light);
+    transition: all 0.15s;
+  }
+
+  .chip.selected {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 3px 10px rgba(0,193,255,0.35);
+  }
+
+  .chip:hover:not(.selected) {
+    transform: translateY(-1px);
+  }
+
+  /* Add button */
+  .btn-add {
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 700;
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 6px 20px rgba(0,193,255,0.35);
+    transition: all 0.2s;
+    margin-top: 4px;
+  }
+
+  .btn-add:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0,193,255,0.45);
+  }
+
+  .btn-add:active { transform: translateY(0); }
+
+  /* Task list */
+  .tasks-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 24px 0 12px;
+  }
+
+  .tasks-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gray);
+    letter-spacing: 1.5px;
+  }
+
+  .tasks-count {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent-border);
+    color: #0088B3;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 10px;
+  }
+
+  .task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 60px;
+  }
+
+  .task-item {
+    padding: 14px 16px;
+    border-radius: 12px;
+    position: relative;
+    animation: slideIn 0.25s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .task-item.zone-ai {
+    background: var(--white);
+    box-shadow: 4px 4px 10px var(--shadow-dark), -2px -2px 6px var(--shadow-light);
+    border-left: 4px solid var(--accent);
+  }
+  .task-item.zone-hybrid {
+    background: var(--white);
+    box-shadow: 4px 4px 10px var(--shadow-dark), -2px -2px 6px var(--shadow-light);
+    border-left: 4px solid var(--orange);
+  }
+  .task-item.zone-human {
+    background: var(--white);
+    box-shadow: 4px 4px 10px var(--shadow-dark), -2px -2px 6px var(--shadow-light);
+    border-left: 4px solid var(--red);
+  }
+
+  .task-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .task-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dark);
+    flex: 1;
+  }
+
+  .task-zone-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+
+  .zone-ai .task-zone-badge { background: var(--accent-dim); color: #0088B3; }
+  .zone-hybrid .task-zone-badge { background: rgba(255,159,67,0.12); color: #CC7A00; }
+  .zone-human .task-zone-badge { background: rgba(255,107,107,0.12); color: #CC4444; }
+
+  .task-meta {
+    display: flex;
+    gap: 12px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
+
+  .task-meta-item {
+    font-size: 11px;
+    color: var(--gray);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .task-prompt {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--text-body);
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 8px 10px;
+    box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -1px -1px 4px var(--shadow-light);
+  }
+
+  .btn-delete {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--light);
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 2px;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+  .btn-delete:hover { color: var(--red); }
+
+  /* Summary */
+  .summary {
+    margin-top: 24px;
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: var(--white);
+    box-shadow: 4px 4px 12px var(--shadow-dark), -3px -3px 8px var(--shadow-light);
+  }
+
+  .summary-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray);
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .summary-zone {
+    text-align: center;
+    padding: 10px 6px;
+    border-radius: 10px;
+    background: var(--bg);
+    box-shadow: inset 2px 2px 6px var(--shadow-dark), inset -1px -1px 4px var(--shadow-light);
+  }
+
+  .summary-num {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .summary-zone.ai .summary-num { color: var(--accent); }
+  .summary-zone.hybrid .summary-num { color: var(--orange); }
+  .summary-zone.human .summary-num { color: var(--red); }
+
+  .summary-label {
+    font-size: 10px;
+    color: var(--gray);
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .time-saved {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .time-saved-label {
+    font-size: 11px;
+    color: #0088B3;
+    font-weight: 600;
+  }
+
+  .time-saved-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--light);
+    font-size: 13px;
+  }
+
+  .empty-state .icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+    opacity: 0.5;
+  }
+
+  /* Export */
+  .btn-export {
+    width: 100%;
+    margin-top: 12px;
+    padding: 11px;
+    border-radius: 10px;
+    border: 2px dashed var(--accent-border);
+    background: transparent;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 600;
+    color: #0088B3;
+    transition: all 0.2s;
+  }
+
+  .btn-export:hover {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--dark);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: transform 0.3s ease;
+    z-index: 999;
+    white-space: nowrap;
+  }
+
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--light); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-accent"></div>
+  <div>
+    <h1>AI Карта недели</h1>
+    <div class="subtitle">Воркшоп AI-first · Практика</div>
+  </div>
+  <div class="badge">ПРАКТИКА</div>
+</div>
+
+<!-- Zone tabs -->
+<div class="zone-tabs">
+  <button class="zone-tab ai active" onclick="switchZone('ai')">🤖 AI справится</button>
+  <button class="zone-tab hybrid" onclick="switchZone('hybrid')">🤝 AI + Человек</button>
+  <button class="zone-tab human" onclick="switchZone('human')">👤 Только человек</button>
+</div>
+
+<!-- Form: AI zone -->
+<div class="task-form active" id="form-ai">
+  <div class="nm-card" style="padding: 18px">
+    <div class="form-section">
+      <label class="form-label">ЗАДАЧА</label>
+      <input class="nm-input" id="task-ai" placeholder="Опишите задачу..." type="text">
+    </div>
+    <div class="row-2">
+      <div class="form-section">
+        <label class="form-label">AI ИНСТРУМЕНТ</label>
+        <input class="nm-input" id="tool-ai" placeholder="Claude, ChatGPT..." type="text">
+      </div>
+      <div class="form-section">
+        <label class="form-label">ДЕНЬ НЕДЕЛИ</label>
+        <input class="nm-input" id="day-ai" placeholder="Пн, Вт..." type="text">
+      </div>
+    </div>
+    <div class="form-section">
+      <label class="form-label">ПРОМПТ / ПОДХОД</label>
+      <textarea class="nm-input" id="prompt-ai" rows="2" placeholder="Как именно использовать AI для этой задачи..."></textarea>
+    </div>
+    <div class="form-section">
+      <label class="form-label">ЭКОНОМИЯ ВРЕМЕНИ</label>
+      <div class="chips" id="time-ai">
+        <button class="chip" onclick="selectChip(this, 'time-ai')">15 мин</button>
+        <button class="chip" onclick="selectChip(this, 'time-ai')">30 мин</button>
+        <button class="chip" onclick="selectChip(this, 'time-ai')">1 час</button>
+        <button class="chip" onclick="selectChip(this, 'time-ai')">2 часа</button>
+        <button class="chip" onclick="selectChip(this, 'time-ai')">4+ часа</button>
+      </div>
+    </div>
+    <button class="btn-add" onclick="addTask('ai')">+ Добавить задачу</button>
+  </div>
+</div>
+
+<!-- Form: Hybrid zone -->
+<div class="task-form" id="form-hybrid">
+  <div class="nm-card" style="padding: 18px">
+    <div class="form-section">
+      <label class="form-label">ЗАДАЧА</label>
+      <input class="nm-input" id="task-hybrid" placeholder="Что делаем вместе с AI?" type="text">
+    </div>
+    <div class="row-2">
+      <div class="form-section">
+        <label class="form-label">AI ИНСТРУМЕНТ</label>
+        <input class="nm-input" id="tool-hybrid" placeholder="Claude, Copilot..." type="text">
+      </div>
+      <div class="form-section">
+        <label class="form-label">ДЕНЬ НЕДЕЛИ</label>
+        <input class="nm-input" id="day-hybrid" placeholder="Пн, Вт..." type="text">
+      </div>
+    </div>
+    <div class="form-section">
+      <label class="form-label">РОЛЬ AI / РОЛЬ ЧЕЛОВЕКА</label>
+      <textarea class="nm-input" id="prompt-hybrid" rows="2" placeholder="AI делает черновик → человек дорабатывает..."></textarea>
+    </div>
+    <div class="form-section">
+      <label class="form-label">ЭКОНОМИЯ ВРЕМЕНИ</label>
+      <div class="chips" id="time-hybrid">
+        <button class="chip" onclick="selectChip(this, 'time-hybrid')">15 мин</button>
+        <button class="chip" onclick="selectChip(this, 'time-hybrid')">30 мин</button>
+        <button class="chip" onclick="selectChip(this, 'time-hybrid')">1 час</button>
+        <button class="chip" onclick="selectChip(this, 'time-hybrid')">2 часа</button>
+        <button class="chip" onclick="selectChip(this, 'time-hybrid')">4+ часа</button>
+      </div>
+    </div>
+    <button class="btn-add" onclick="addTask('hybrid')" style="background: var(--orange); box-shadow: 0 6px 20px rgba(255,159,67,0.35)">+ Добавить задачу</button>
+  </div>
+</div>
+
+<!-- Form: Human zone -->
+<div class="task-form" id="form-human">
+  <div class="nm-card" style="padding: 18px">
+    <div class="form-section">
+      <label class="form-label">ЗАДАЧА (ТОЛЬКО ДЛЯ ЧЕЛОВЕКА)</label>
+      <input class="nm-input" id="task-human" placeholder="Что AI не может сделать за вас?" type="text">
+    </div>
+    <div class="row-2">
+      <div class="form-section">
+        <label class="form-label">ДЕНЬ НЕДЕЛИ</label>
+        <input class="nm-input" id="day-human" placeholder="Пн, Вт..." type="text">
+      </div>
+      <div class="form-section">
+        <label class="form-label">ПРИЧИНА</label>
+        <input class="nm-input" id="prompt-human" placeholder="Почему здесь нужен человек?" type="text">
+      </div>
+    </div>
+    <button class="btn-add" onclick="addTask('human')" style="background: var(--red); box-shadow: 0 6px 20px rgba(255,107,107,0.35)">+ Добавить задачу</button>
+  </div>
+</div>
+
+<!-- Task list -->
+<div class="tasks-header">
+  <div class="tasks-title">МОИ ЗАДАЧИ</div>
+  <div class="tasks-count" id="task-count">0</div>
+</div>
+
+<div class="task-list" id="task-list">
+  <div class="empty-state">
+    <div class="icon">🗺</div>
+    <div>Добавь первую задачу из своей недели</div>
+  </div>
+</div>
+
+<!-- Summary -->
+<div class="summary" id="summary" style="display:none">
+  <div class="summary-title">ИТОГ НЕДЕЛИ</div>
+  <div class="summary-grid">
+    <div class="summary-zone ai">
+      <div class="summary-num" id="count-ai">0</div>
+      <div class="summary-label">🤖 AI</div>
+    </div>
+    <div class="summary-zone hybrid">
+      <div class="summary-num" id="count-hybrid">0</div>
+      <div class="summary-label">🤝 Гибрид</div>
+    </div>
+    <div class="summary-zone human">
+      <div class="summary-num" id="count-human">0</div>
+      <div class="summary-label">👤 Человек</div>
+    </div>
+  </div>
+  <div class="time-saved">
+    <div class="time-saved-label">⏱ Потенциальная экономия в неделю</div>
+    <div class="time-saved-value" id="time-total">0 ч</div>
+  </div>
+  <button class="btn-export" onclick="exportTasks()">⬇ Скопировать карту как текст</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let tasks = [];
+let currentZone = 'ai';
+let selectedTimes = { ai: null, hybrid: null, human: null };
+
+const timeValues = {
+  '15 мин': 0.25,
+  '30 мин': 0.5,
+  '1 час': 1,
+  '2 часа': 2,
+  '4+ часа': 4
+};
+
+const zoneLabels = {
+  ai: '🤖 AI справится',
+  hybrid: '🤝 AI + Человек',
+  human: '👤 Только человек'
+};
+
+function switchZone(zone) {
+  currentZone = zone;
+  document.querySelectorAll('.zone-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.zone-tab.' + zone).classList.add('active');
+  document.querySelectorAll('.task-form').forEach(f => f.classList.remove('active'));
+  document.getElementById('form-' + zone).classList.add('active');
+}
+
+function selectChip(el, group) {
+  document.querySelectorAll('#' + group + ' .chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedTimes[group.replace('time-', '')] = el.textContent;
+}
+
+function addTask(zone) {
+  const taskEl = document.getElementById('task-' + zone);
+  const toolEl = document.getElementById('tool-' + zone);
+  const dayEl = document.getElementById('day-' + zone);
+  const promptEl = document.getElementById('prompt-' + zone);
+
+  const name = taskEl.value.trim();
+  if (!name) {
+    taskEl.focus();
+    showToast('Введите название задачи');
+    return;
+  }
+
+  const task = {
+    id: Date.now(),
+    zone,
+    name,
+    tool: toolEl ? toolEl.value.trim() : '',
+    day: dayEl ? dayEl.value.trim() : '',
+    prompt: promptEl ? promptEl.value.trim() : '',
+    time: selectedTimes[zone]
+  };
+
+  tasks.push(task);
+  renderTasks();
+  updateSummary();
+
+  // Clear form
+  taskEl.value = '';
+  if (toolEl) toolEl.value = '';
+  if (dayEl) dayEl.value = '';
+  if (promptEl) promptEl.value = '';
+  document.querySelectorAll('#time-' + zone + ' .chip').forEach(c => c.classList.remove('selected'));
+  selectedTimes[zone] = null;
+
+  showToast('Задача добавлена ✓');
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  renderTasks();
+  updateSummary();
+}
+
+function renderTasks() {
+  const list = document.getElementById('task-list');
+  document.getElementById('task-count').textContent = tasks.length;
+
+  if (tasks.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🗺</div>
+        <div>Добавь первую задачу из своей недели</div>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = tasks.map(t => `
+    <div class="task-item zone-${t.zone}">
+      <div class="task-top">
+        <div class="task-name">${escHtml(t.name)}</div>
+        <span class="task-zone-badge">${zoneLabels[t.zone]}</span>
+        <button class="btn-delete" onclick="deleteTask(${t.id})" title="Удалить">×</button>
+      </div>
+      <div class="task-meta">
+        ${t.day ? `<span class="task-meta-item">📅 ${escHtml(t.day)}</span>` : ''}
+        ${t.tool ? `<span class="task-meta-item">🛠 ${escHtml(t.tool)}</span>` : ''}
+        ${t.time ? `<span class="task-meta-item">⏱ ${escHtml(t.time)}</span>` : ''}
+      </div>
+      ${t.prompt ? `<div class="task-prompt">${escHtml(t.prompt)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function updateSummary() {
+  const summary = document.getElementById('summary');
+  summary.style.display = tasks.length > 0 ? 'block' : 'none';
+
+  const counts = { ai: 0, hybrid: 0, human: 0 };
+  let totalHours = 0;
+
+  tasks.forEach(t => {
+    counts[t.zone]++;
+    if (t.time && timeValues[t.time]) {
+      totalHours += timeValues[t.time];
+    }
+  });
+
+  document.getElementById('count-ai').textContent = counts.ai;
+  document.getElementById('count-hybrid').textContent = counts.hybrid;
+  document.getElementById('count-human').textContent = counts.human;
+
+  const hours = Math.floor(totalHours);
+  const mins = Math.round((totalHours - hours) * 60);
+  document.getElementById('time-total').textContent =
+    hours > 0 ? `${hours} ч ${mins > 0 ? mins + ' мин' : ''}` : `${mins} мин`;
+}
+
+function exportTasks() {
+  if (tasks.length === 0) { showToast('Нет задач для экспорта'); return; }
+
+  let text = '📋 МОЯ AI КАРТА НЕДЕЛИ\n';
+  text += '═'.repeat(40) + '\n\n';
+
+  ['ai', 'hybrid', 'human'].forEach(zone => {
+    const zoneTasks = tasks.filter(t => t.zone === zone);
+    if (zoneTasks.length === 0) return;
+    text += `${zoneLabels[zone].toUpperCase()}\n`;
+    text += '─'.repeat(30) + '\n';
+    zoneTasks.forEach((t, i) => {
+      text += `${i + 1}. ${t.name}\n`;
+      if (t.day) text += `   📅 ${t.day}\n`;
+      if (t.tool) text += `   🛠 ${t.tool}\n`;
+      if (t.time) text += `   ⏱ ${t.time}\n`;
+      if (t.prompt) text += `   💬 ${t.prompt}\n`;
+      text += '\n';
+    });
+  });
+
+  const ai = tasks.filter(t => t.zone === 'ai').length;
+  const hybrid = tasks.filter(t => t.zone === 'hybrid').length;
+  const human = tasks.filter(t => t.zone === 'human').length;
+  let totalH = 0;
+  tasks.forEach(t => { if (t.time && timeValues[t.time]) totalH += timeValues[t.time]; });
+
+  text += '═'.repeat(40) + '\n';
+  text += `ИТОГО: ${tasks.length} задач | AI: ${ai} | Гибрид: ${hybrid} | Человек: ${human}\n`;
+  if (totalH > 0) {
+    const h = Math.floor(totalH), m = Math.round((totalH - h) * 60);
+    text += `Потенциальная экономия: ${h > 0 ? h + ' ч ' : ''}${m > 0 ? m + ' мин' : ''} в неделю\n`;
+  }
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Карта скопирована в буфер ✓');
+  }).catch(() => {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('Карта скопирована ✓');
+  });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// Enter key support
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+    addTask(currentZone);
+  }
+});
+</script>
+</body>
+</html>
